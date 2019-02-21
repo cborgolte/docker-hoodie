@@ -4,13 +4,57 @@
         <meta charset="utf-8">
     </head>
     <body>
+        <div id="messages">
+            <h1>Messages</h1>
+        </div>
+        <form accept-charset="utf-8">
+            <input type="text" value="" name="msg" id="msg-input"/>
+        </form>
         <script src="/hoodie/client.js"></script>
         <script>
+
+            const $form = document.querySelector('form');
+            const $msgs = document.getElementById('messages');
             const credentials = {username: 'user1', password: 'pass1'};
+
+            // if necessary, create new account - log in anyways
             hoodie.account.signUp(credentials)
-                .then(function() { hoodie.account.signIn(credentials) })
-                .then(function(a, b, c) { alert('logged in', a, b, c) })
-                .catch(function(error) {alert(error)});
+                .finally(function() {
+                    hoodie.account
+                        .signIn(credentials)
+                        .catch(function(error) {alert(error)});
+                });
+
+            // Handler for changes in the message database
+            function fillMsgLog() {
+                hoodie.store.findAll().then(function(msgs) {
+                    $msgs.innerHTML = '<h1>Messages</h1>' +
+                        msgs
+                        .map(function(msg) {
+                            return '<p>' + msg.msg + '</p>';
+                        })
+                        .join('');
+                });
+            }
+
+            // Handler for entering new messages
+            function handleSubmit(event) {
+                event.preventDefault();
+                let $input = document.getElementById('msg-input');
+                let msg = $input.value;
+                hoodie.store
+                    .add({msg})
+                    .catch(function(error) {
+                        alert(error);
+                    });
+                $input.value = '';
+                return false;
+            }
+
+            $form.addEventListener('submit', handleSubmit);
+            hoodie.store.on('change', fillMsgLog);
+            fillMsgLog();
+
         </script>
     </body>
 </html>
